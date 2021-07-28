@@ -11,6 +11,12 @@ interface FormAddImageProps {
   closeModal: () => void;
 }
 
+interface IFormSubmitData {
+  title: string;
+  description: string;
+  url: string;
+}
+
 const MAX_FILE_SIZE = 1000000;
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
@@ -42,11 +48,11 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   };
 
   const queryClient = useQueryClient();
-  const mutation = useMutation(
-    // TODO MUTATION API POST REQUEST,
-    {
-      // TODO ONSUCCESS MUTATION
-    }
+  const mutation = useMutation(async (data: IFormSubmitData): Promise<any>  => {
+      const response = await api.post('images', data);
+      return response.data;
+    },
+    { onSuccess: () => queryClient.invalidateQueries('images') }
   );
 
   const { register, handleSubmit, reset, formState, setError, trigger } =
@@ -55,13 +61,35 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
     try {
-      // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
-      // TODO EXECUTE ASYNC MUTATION
-      // TODO SHOW SUCCESS TOAST
-    } catch {
-      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
+      if (!imageUrl) {
+        toast({
+          status:'error',
+          title: 'Imagem não adicionada',
+          description: `É preciso adicionar e aguardar o upload de uma imagem 
+            antes de realizar o cadastro`,
+          isClosable: true
+        });
+        return;
+      }
+      await mutation.mutateAsync({ ...data, url: imageUrl });
+
+      toast({
+        status: 'success',
+        title: 'Imagem cadastrada',
+        description: 'Sua imagem foi cadastrada com sucesso',
+      });
+    } catch (ex) {
+      console.log(ex);
+      toast({
+        status:'error',
+        title: 'Falha no cadastro',
+        description: 'Ocorreu um erro ao tentar cadastrar a sua imagem',
+        isClosable: true
+      });
     } finally {
-      // TODO CLEAN FORM, STATES AND CLOSE MODAL
+      reset();  
+      setLocalImageUrl('');
+      closeModal();
     }
   };
 
@@ -74,8 +102,8 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           setLocalImageUrl={setLocalImageUrl}
           setError={setError}
           trigger={trigger}
-          error={errors.file}
-          {...register('file', formValidations.image)}
+          error={errors.image}
+          {...register('image', formValidations.image)}
         />
 
         <TextInput
