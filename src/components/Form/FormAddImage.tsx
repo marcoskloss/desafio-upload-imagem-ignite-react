@@ -49,7 +49,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const queryClient = useQueryClient();
   const mutation = useMutation(async (data: IFormSubmitData): Promise<any>  => {
-      const response = await api.post('images', data);
+      const response = await api.post('api/images', data);
       return response.data;
     },
     { onSuccess: () => queryClient.invalidateQueries('images') }
@@ -59,7 +59,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
     useForm();
   const { errors } = formState;
 
-  const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
+  const onSubmit = async (data: IFormSubmitData): Promise<void> => {
     try {
       if (!imageUrl) {
         toast({
@@ -71,7 +71,13 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
         });
         return;
       }
-      await mutation.mutateAsync({ ...data, url: imageUrl });
+      console.log(data, imageUrl)
+
+      await mutation.mutateAsync({
+        title: data.title,
+        description: data.description,
+        url: imageUrl
+      });
 
       toast({
         status: 'success',
